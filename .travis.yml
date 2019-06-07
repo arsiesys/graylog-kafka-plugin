@@ -1,0 +1,19 @@
+sudo: false
+branches:
+  only:
+  - /^v.*$/
+language: java
+jdk: oraclejdk8
+before_deploy:
+  - find . -type f -name 'original-*.jar' -delete
+  - mvn package
+deploy:
+  provider: releases
+  api_key:
+    secure: Ri2C8Edwko41QE/acran2xTKhFfuKSLl8njMlVj/3VNRC9V8u9g8slf+eH7c82bFhU2ghpHLZjhsCY16YyJAfR1hc/cbMMU32Sy4n5BwxjvvhQmd+96+SklgVDbGhHylqX6sUrjtCWYXPWq2tCoKeVttc3369PHLXB88uXg95088kB1XBN9fxNiTsirj8K2CPxHBA1DSVBuWhncsRXOA7Qy7hbCF+aGt/fV6N5YILOak5pHX8Ht9XNv3+BX6baTGUDJ6RdqoDnV5seBg4qyUT6VSsGqshNJjJTmpeIyaD+2ERefS/pzN+jCvyck5kv+p3qa6g89j/NBWNY/bPffEMfVbVbY+DYR5uXFiLRf15Zt66J+evUm2l6iQVQQTKSCAj/6Ibtoqx9jRsazLgyG3ePwgll4N20oPUlDGM/axraK0TVXydL/E4/vaQz3zbmKcM66bTX1anhDJAUinTXo3fRAEqqRC8q7wJLX5lhIVdep9hGVKjnudsB7M9FNo1CbJGMMXPdFlIt3Uhjg8tkFSxWR7+TpW75u1+SclL2kWWYkbglBdNhm/ArtgIUoGlo9SHuQJFgbi6pbpBjYyS4qBXeNBjosCAwkDgt85NMTjOdmKo/d7oSYVHZvL97xArB+wPcUwlzNto8jG6C4t0TR2iTd3WSAJC/XZPF7g3wpAN/8=
+  file: target/graylog-plugin*.jar
+  file_glob: true
+  skip_cleanup: true
+  on:
+    tags: true
+    jdk: oraclejdk8
