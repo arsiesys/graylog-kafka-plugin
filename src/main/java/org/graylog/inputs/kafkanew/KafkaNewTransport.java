@@ -95,6 +95,9 @@ public class KafkaNewTransport extends ThrottleableTransport {
     public static final String CK_SSL_TRUSTSTORE_PASSWORD="ssl_truststore_password";
     public static final String CK_SSL_ENABLED_PROTOCOL="ssl_enabled_protocol";
 
+    // Required to handle higher messages bytes size
+    public static final String CK_MAX_PARTITION_FETCH_BYTES="max_partition_fetch_bytes";
+
     // See https://kafka.apache.org/090/documentation.html for available values for "auto.offset.reset".
     private static final Map<String, String> OFFSET_RESET_VALUES = ImmutableMap.of(
             "latest", "Automatically reset the offset to the latest offset",
@@ -211,6 +214,7 @@ public class KafkaNewTransport extends ThrottleableTransport {
         // Set a consumer timeout to avoid blocking on the consumer iterator.
         props.put("consumer.timeout.ms", "1000");
         props.put("bootstrap.servers", configuration.getString(CK_BOOTSTRAP));
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, String.valueOf(configuration.getInt(CK_MAX_PARTITION_FETCH_BYTES)));
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,ByteArrayDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,ByteArrayDeserializer.class.getName());
 
@@ -485,6 +489,13 @@ public class KafkaNewTransport extends ThrottleableTransport {
                     OFFSET_RESET_VALUES,
                     "What to do when there is no initial offset in ZooKeeper or if an offset is out of range",
                     ConfigurationField.Optional.OPTIONAL));
+
+            cr.addField(new NumberField(
+                    CK_MAX_PARTITION_FETCH_BYTES,
+                    "limiting the consumer request size",
+                    1048576,
+                    "The maximum amount of data per-partition the server will return.",
+                    ConfigurationField.Optional.NOT_OPTIONAL));
 
             return cr;
         }
