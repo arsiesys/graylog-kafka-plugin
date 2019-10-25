@@ -3,7 +3,7 @@ branches:
   only:
   - /^v.*$/
 language: java
-jdk: oraclejdk8
+jdk: openjdk8
 before_deploy:
   - find . -type f -name 'original-*.jar' -delete
   - mvn package
@@ -16,4 +16,4 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    jdk: oraclejdk8
+    jdk: openjdk8
