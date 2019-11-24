@@ -79,7 +79,6 @@ public class KafkaNewTransport extends ThrottleableTransport {
     public static final String GROUP_ID = "graylog2new";
     public static final String CK_FETCH_MIN_BYTES = "fetch_min_bytes";
     public static final String CK_FETCH_WAIT_MAX = "fetch_wait_max";
-    public static final String CK_ZOOKEEPER = "zookeeper";
     public static final String CK_TOPIC_FILTER = "topic_filter";
     public static final String CK_THREADS = "threads";
     public static final String CK_OFFSET_RESET = "offset_reset";
@@ -371,13 +370,6 @@ public class KafkaNewTransport extends ThrottleableTransport {
         @Override
         public ConfigurationRequest getRequestedConfiguration() {
             final ConfigurationRequest cr = super.getRequestedConfiguration();
-
-            cr.addField(new TextField(
-                    CK_ZOOKEEPER,
-                    "ZooKeeper address",
-                    "127.0.0.1:2181",
-                    "Host and port of the ZooKeeper that is managing your Kafka cluster.",
-                    ConfigurationField.Optional.NOT_OPTIONAL));
 
             cr.addField(new TextField(
                     CK_BOOTSTRAP,
