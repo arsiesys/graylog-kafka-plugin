@@ -1,6 +1,6 @@
 Kafka Plugin for Graylog
 ========================
-This is an Graylog input plugin to add the support of newer kafka version like 1.1.0.
+This is an Graylog input plugin to add the support of newer kafka version like 1.x and 2.x.
 
 This is fully a plugin portage of the work of @muralibasani on this PR:
 https://github.com/Graylog2/graylog2-server/pull/4770
