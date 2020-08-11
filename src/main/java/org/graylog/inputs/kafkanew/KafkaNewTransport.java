@@ -77,7 +77,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.codahale.metrics.MetricRegistry.name;
 
 public class KafkaNewTransport extends ThrottleableTransport {
-    public static final String GROUP_ID = "graylog2new";
+    public static final String CONSUMER_GROUP_ID = "CONSUMER_GROUP_ID";
     public static final String CK_FETCH_MIN_BYTES = "fetch_min_bytes";
     public static final String CK_FETCH_WAIT_MAX = "fetch_wait_max";
     public static final String CK_ZOOKEEPER = "zookeeper";
@@ -203,7 +203,7 @@ public class KafkaNewTransport extends ThrottleableTransport {
 
         final Properties props = new Properties();
 
-        props.put("group.id", GROUP_ID);
+        props.put("group.id", configuration.getString(CONSUMER_GROUP_ID));
         props.put("client.id", "gl2-" + nodeId + "-" + input.getId());
         props.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, String.valueOf(configuration.getInt(CK_FETCH_MIN_BYTES)));
         props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, String.valueOf(configuration.getInt(CK_FETCH_WAIT_MAX)));
@@ -488,6 +488,13 @@ public class KafkaNewTransport extends ThrottleableTransport {
                     DEFAULT_OFFSET_RESET,
                     OFFSET_RESET_VALUES,
                     "What to do when there is no initial offset in ZooKeeper or if an offset is out of range",
+                    ConfigurationField.Optional.OPTIONAL));
+            
+            cr.addField(new TextField(
+                    CONSUMER_GROUP_ID,
+                    "Consumer group id",
+                    "graylog2new",
+                    "Name of the consumer group the Kafka input belongs to",
                     ConfigurationField.Optional.OPTIONAL));
 
             cr.addField(new NumberField(
