@@ -29,9 +29,6 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import kafka.consumer.ConsumerTimeoutException;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
-import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -72,7 +69,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -80,7 +79,6 @@ public class KafkaNewTransport extends ThrottleableTransport {
     public static final String CONSUMER_GROUP_ID = "CONSUMER_GROUP_ID";
     public static final String CK_FETCH_MIN_BYTES = "fetch_min_bytes";
     public static final String CK_FETCH_WAIT_MAX = "fetch_wait_max";
-    public static final String CK_ZOOKEEPER = "zookeeper";
     public static final String CK_TOPIC_FILTER = "topic_filter";
     public static final String CK_THREADS = "threads";
     public static final String CK_OFFSET_RESET = "offset_reset";
@@ -99,7 +97,7 @@ public class KafkaNewTransport extends ThrottleableTransport {
     public static final String CK_MAX_PARTITION_FETCH_BYTES="max_partition_fetch_bytes";
 
     // See https://kafka.apache.org/090/documentation.html for available values for "auto.offset.reset".
-    private static final Map<String, String> OFFSET_RESET_VALUES = ImmutableMap.of(
+    private static final ImmutableMap<String, String> OFFSET_RESET_VALUES = ImmutableMap.of(
             "latest", "Automatically reset the offset to the latest offset",
             "earliest", "Automatically reset the offset to the earliest offset"
     );
@@ -232,33 +230,18 @@ public class KafkaNewTransport extends ThrottleableTransport {
 
         final int numThreads = configuration.getInt(CK_THREADS);
         consumer = new KafkaConsumer<>(props);
-        String zkConnect = configuration.getString(CK_ZOOKEEPER);
+	final Pattern topicFilter = Pattern.compile(configuration.getString(CK_TOPIC_FILTER));
+        consumer.subscribe(topicFilter);
 
-        ZkClient zkClient = new ZkClient(zkConnect, 30000, 30000, ZKStringSerializer$.MODULE$);
-        ZkUtils zkUtils = ZkUtils.apply(zkClient, false);
-
-        List<String> subscribedTopics = new ArrayList<String>();
-
-        List<String> topics = JavaConversions.seqAsJavaList(zkUtils.getAllTopics());
-
-        topics.stream()
-            .forEach(topicName->{
-                if(topicName!=null && topicName.matches(configuration.getString(CK_TOPIC_FILTER))) {
-                    subscribedTopics.add(topicName);
-                }
-            });
-
-        consumer.subscribe(subscribedTopics);
-
-       final ExecutorService executor = executorService(numThreads);
+        final ExecutorService executor = executorService(numThreads);
 
         // this is being used during shutdown to first stop all submitted jobs before committing the offsets back to zookeeper
         // and then shutting down the connection.
         // this is to avoid yanking away the connection from the consumer runnables
-        int countDownLatchSize = subscribedTopics.size() + numThreads;
+        int countDownLatchSize = numThreads;
         stopLatch = new CountDownLatch(countDownLatchSize);
 
-            executor.submit(new Runnable() {
+            final Future commitFuture = executor.submit(new Runnable() {
                 @Override
                 public void run() {
                     boolean retry = false;
@@ -321,7 +304,7 @@ public class KafkaNewTransport extends ThrottleableTransport {
                 }
             });
 
-        scheduler.scheduleAtFixedRate(new Runnable() {
+        final Future scheduleFuture = scheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 lastSecBytesRead.set(lastSecBytesReadTmp.getAndSet(0));
@@ -387,13 +370,6 @@ public class KafkaNewTransport extends ThrottleableTransport {
         @Override
         public ConfigurationRequest getRequestedConfiguration() {
             final ConfigurationRequest cr = super.getRequestedConfiguration();
-
-            cr.addField(new TextField(
-                    CK_ZOOKEEPER,
-                    "ZooKeeper address",
-                    "127.0.0.1:2181",
-                    "Host and port of the ZooKeeper that is managing your Kafka cluster.",
-                    ConfigurationField.Optional.NOT_OPTIONAL));
 
             cr.addField(new TextField(
                     CK_BOOTSTRAP,
