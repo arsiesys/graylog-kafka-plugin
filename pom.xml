@@ -27,7 +27,7 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.site.skip>true</maven.site.skip>
 
-        <graylog.version>2.4.0</graylog.version>
+        <graylog.version>5.1.11</graylog.version>
     </properties>
 
     <dependencies>
